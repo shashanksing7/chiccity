@@ -1,0 +1,13 @@
+<resources>
+    <!-- Light theme -->
+    <style name="Theme.Chiccity2" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Splash screen -->
+    <style name="ChicCity.SplashScreen.DayNight" parent="Theme.SplashScreen">
+        <!-- Background will reference theme attribute -->
+        <item name="windowSplashScreenBackground">@color/colorBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.Chiccity2</item>
+        <item name="windowSplashScreenAnimationDuration">3000</item>
+    </style>
+</resources>
