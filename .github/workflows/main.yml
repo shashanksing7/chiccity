@@ -17,17 +17,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Decode Keystore
+      - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
 
-      - name: Grant Gradle Permission
+      - name: Grant gradle permission
         run: chmod +x gradlew
 
-      - name: Build Release AAB
+      - name: Build AAB
         run: ./gradlew bundleRelease
 
       - name: Upload AAB
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: app/build/outputs/bundle/release/*.aab
