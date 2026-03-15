@@ -249,11 +249,213 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import chiccity.`in`.R
 
+// @Composable
+// fun WebViewScreen(
+//     url: String,
+//     webViewHolder: WebViewHolder,
+//     modifier: Modifier = Modifier,
+//     onLoginSuccess: (() -> Unit)? = null
+// ) {
+//     var isLoading by remember { mutableStateOf(true) }
+//     var hasError by remember { mutableStateOf(false) }
+
+//     val backgroundColor = MaterialTheme.colorScheme.background
+//     val contentColor = MaterialTheme.colorScheme.onBackground
+//     val primaryColor = MaterialTheme.colorScheme.primary
+
+//     val context = LocalContext.current
+
+//     // ✅ Create WebView ONLY once
+//     val webView = remember {
+//         WebView(context).apply {
+
+//             val cookieManager = CookieManager.getInstance()
+//             cookieManager.setAcceptCookie(true)
+//             cookieManager.setAcceptThirdPartyCookies(this, true)
+
+//             settings.javaScriptEnabled = true
+//             settings.domStorageEnabled = true
+//             settings.javaScriptCanOpenWindowsAutomatically = false
+//             settings.setSupportMultipleWindows(false)
+
+//             webViewClient = object : WebViewClient() {
+
+//                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+//                     isLoading = true
+//                     hasError = false
+//                 }
+
+//                 override fun onPageFinished(view: WebView?, url: String?) {
+//                     isLoading = false
+
+//                     val cookies = cookieManager.getCookie("https://chiccity.in")
+//                     if (cookies?.contains("wordpress_logged_in") == true) {
+//                         cookieManager.flush()
+//                         onLoginSuccess?.invoke()
+//                     }
+
+//                     injectWhatsAppRemoval(view)
+//                 }
+
+//                 override fun shouldOverrideUrlLoading(
+//                     view: WebView?,
+//                     request: WebResourceRequest?
+//                 ): Boolean {
+//                     val link = request?.url.toString()
+//                     return link.startsWith("whatsapp://") ||
+//                             link.contains("wa.me") ||
+//                             link.contains("api.whatsapp.com")
+//                 }
+
+//                 override fun onReceivedError(
+//                     view: WebView?,
+//                     request: WebResourceRequest?,
+//                     error: WebResourceError?
+//                 ) {
+//                     if (request?.isForMainFrame == true) {
+//                         isLoading = false
+//                         hasError = true
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+//     // ✅ Attach to holder once
+//     LaunchedEffect(Unit) {
+//         webViewHolder.webView = webView
+//     }
+
+//     // ✅ Single source of URL loading (FIXED)
+//     LaunchedEffect(url) {
+//         isLoading = true
+//         hasError = false
+//         webView.loadUrl(url)
+//     }
+
+//     Box(modifier = modifier.fillMaxSize()) {
+
+//         AndroidView(
+//             factory = { webView },
+//             modifier = Modifier
+//                 .fillMaxSize()
+//                 .alpha(if (hasError) 0f else 1f)
+//         )
+
+//         if (isLoading && !hasError) {
+//             LoadingOverlay(backgroundColor, primaryColor, contentColor)
+//         }
+
+//         if (hasError) {
+//             ErrorOverlay(
+//                 backgroundColor = backgroundColor,
+//                 contentColor = contentColor,
+//                 primaryColor = primaryColor,
+//                 onRetry = {
+//                     hasError = false
+//                     isLoading = true
+//                     webView.reload()
+//                 }
+//             )
+//         }
+//     }
+
+//     // ✅ Back navigation
+//     BackHandler(enabled = webView.canGoBack()) {
+//         webView.goBack()
+//     }
+// }
+
+// @Composable
+// private fun LoadingOverlay(
+//     backgroundColor: Color,
+//     primaryColor: Color,
+//     contentColor: Color
+// ) {
+//     Box(
+//         modifier = Modifier
+//             .fillMaxSize()
+//             .background(backgroundColor),
+//         contentAlignment = Alignment.Center
+//     ) {
+//         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//             CircularProgressIndicator(color = primaryColor)
+//             Spacer(modifier = Modifier.height(20.dp))
+//             Text(
+//                 "Please wait...",
+//                 style = MaterialTheme.typography.bodyLarge,
+//                 color = contentColor
+//             )
+//         }
+//     }
+// }
+
+// @Composable
+// private fun ErrorOverlay(
+//     backgroundColor: Color,
+//     contentColor: Color,
+//     primaryColor: Color,
+//     onRetry: () -> Unit
+// ) {
+//     Box(
+//         modifier = Modifier
+//             .fillMaxSize()
+//             .background(backgroundColor),
+//         contentAlignment = Alignment.Center
+//     ) {
+//         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+//             Image(
+//                 painter = painterResource(id = R.drawable.no_wifi_2_svgrepo_com),
+//                 contentDescription = "No Internet",
+//                 modifier = Modifier.size(150.dp),
+//                 colorFilter = ColorFilter.tint(contentColor)
+//             )
+//             Spacer(modifier = Modifier.height(20.dp))
+//             Text(
+//                 "Page could not be loaded",
+//                 style = MaterialTheme.typography.titleMedium,
+//                 color = contentColor
+//             )
+//             Spacer(modifier = Modifier.height(8.dp))
+//             Text(
+//                 "Please check your internet connection.",
+//                 style = MaterialTheme.typography.bodyMedium,
+//                 color = contentColor
+//             )
+//             Spacer(modifier = Modifier.height(20.dp))
+//             Button(
+//                 onClick = onRetry,
+//                 colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+//             ) {
+//                 Text("Retry", color = backgroundColor)
+//             }
+//         }
+//     }
+// }
+
+// // ✅ JavaScript injection
+// private fun injectWhatsAppRemoval(view: WebView?) {
+//     view?.evaluateJavascript(
+//         """
+//         (function() {
+//             const selectors = ['.wa__btn_popup_txt','.wa__btn_popup_icon','.wa__popup_heading','.wa__popup_content'];
+//             selectors.forEach(sel => { 
+//                 const el = document.querySelector(sel); 
+//                 if(el) el.remove(); 
+//             });
+//         })();
+//         """.trimIndent(),
+//         null
+//     )
+// }
+
+
 @Composable
 fun WebViewScreen(
     url: String,
     webViewHolder: WebViewHolder,
     modifier: Modifier = Modifier,
+    hideUI: Boolean = false, // New parameter to control header/footer visibility
     onLoginSuccess: (() -> Unit)? = null
 ) {
     var isLoading by remember { mutableStateOf(true) }
@@ -262,13 +464,10 @@ fun WebViewScreen(
     val backgroundColor = MaterialTheme.colorScheme.background
     val contentColor = MaterialTheme.colorScheme.onBackground
     val primaryColor = MaterialTheme.colorScheme.primary
-
     val context = LocalContext.current
 
-    // ✅ Create WebView ONLY once
     val webView = remember {
         WebView(context).apply {
-
             val cookieManager = CookieManager.getInstance()
             cookieManager.setAcceptCookie(true)
             cookieManager.setAcceptThirdPartyCookies(this, true)
@@ -276,10 +475,8 @@ fun WebViewScreen(
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.javaScriptCanOpenWindowsAutomatically = false
-            settings.setSupportMultipleWindows(false)
-
+            
             webViewClient = object : WebViewClient() {
-
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     isLoading = true
                     hasError = false
@@ -288,30 +485,28 @@ fun WebViewScreen(
                 override fun onPageFinished(view: WebView?, url: String?) {
                     isLoading = false
 
+                    // Check for login success
                     val cookies = cookieManager.getCookie("https://chiccity.in")
                     if (cookies?.contains("wordpress_logged_in") == true) {
                         cookieManager.flush()
                         onLoginSuccess?.invoke()
                     }
 
+                    // Always remove WhatsApp
                     injectWhatsAppRemoval(view)
+                    
+                    // Conditionally remove Header and Footer
+                    if (hideUI) {
+                        injectUIElementsRemoval(view)
+                    }
                 }
 
-                override fun shouldOverrideUrlLoading(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): Boolean {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val link = request?.url.toString()
-                    return link.startsWith("whatsapp://") ||
-                            link.contains("wa.me") ||
-                            link.contains("api.whatsapp.com")
+                    return link.startsWith("whatsapp://") || link.contains("wa.me") || link.contains("api.whatsapp.com")
                 }
 
-                override fun onReceivedError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    error: WebResourceError?
-                ) {
+                override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                     if (request?.isForMainFrame == true) {
                         isLoading = false
                         hasError = true
@@ -321,12 +516,8 @@ fun WebViewScreen(
         }
     }
 
-    // ✅ Attach to holder once
-    LaunchedEffect(Unit) {
-        webViewHolder.webView = webView
-    }
+    LaunchedEffect(Unit) { webViewHolder.webView = webView }
 
-    // ✅ Single source of URL loading (FIXED)
     LaunchedEffect(url) {
         isLoading = true
         hasError = false
@@ -334,12 +525,9 @@ fun WebViewScreen(
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-
         AndroidView(
             factory = { webView },
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(if (hasError) 0f else 1f)
+            modifier = Modifier.fillMaxSize().alpha(if (hasError) 0f else 1f)
         )
 
         if (isLoading && !hasError) {
@@ -360,80 +548,13 @@ fun WebViewScreen(
         }
     }
 
-    // ✅ Back navigation
     BackHandler(enabled = webView.canGoBack()) {
         webView.goBack()
     }
 }
 
-@Composable
-private fun LoadingOverlay(
-    backgroundColor: Color,
-    primaryColor: Color,
-    contentColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(color = primaryColor)
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                "Please wait...",
-                style = MaterialTheme.typography.bodyLarge,
-                color = contentColor
-            )
-        }
-    }
-}
+// --- Helper Functions ---
 
-@Composable
-private fun ErrorOverlay(
-    backgroundColor: Color,
-    contentColor: Color,
-    primaryColor: Color,
-    onRetry: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(id = R.drawable.no_wifi_2_svgrepo_com),
-                contentDescription = "No Internet",
-                modifier = Modifier.size(150.dp),
-                colorFilter = ColorFilter.tint(contentColor)
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                "Page could not be loaded",
-                style = MaterialTheme.typography.titleMedium,
-                color = contentColor
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Please check your internet connection.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = contentColor
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-            ) {
-                Text("Retry", color = backgroundColor)
-            }
-        }
-    }
-}
-
-// ✅ JavaScript injection
 private fun injectWhatsAppRemoval(view: WebView?) {
     view?.evaluateJavascript(
         """
@@ -444,7 +565,63 @@ private fun injectWhatsAppRemoval(view: WebView?) {
                 if(el) el.remove(); 
             });
         })();
-        """.trimIndent(),
-        null
+        """.trimIndent(), null
     )
+}
+
+/**
+ * Removes Header and Footer from the website.
+ * Adjust the selectors ('.site-header', '.site-footer') based on your specific WordPress theme.
+ */
+private fun injectUIElementsRemoval(view: WebView?) {
+    view?.evaluateJavascript(
+        """
+        (function() {
+            // Common WordPress/Astra selectors. Change these if your header/footer still show.
+            const uiSelectors = [
+                'header', 
+                'footer', 
+                '.site-header', 
+                '.site-footer', 
+                '.ast-mobile-header-wrap', 
+                '.main-header-bar'
+            ];
+            uiSelectors.forEach(sel => { 
+                const el = document.querySelector(sel); 
+                if(el) el.style.display = 'none'; 
+            });
+        })();
+        """.trimIndent(), null
+    )
+}
+
+@Composable
+private fun LoadingOverlay(backgroundColor: Color, primaryColor: Color, contentColor: Color) {
+    Box(modifier = Modifier.fillMaxSize().background(backgroundColor), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = primaryColor)
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("Please wait...", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+        }
+    }
+}
+
+@Composable
+private fun ErrorOverlay(backgroundColor: Color, contentColor: Color, primaryColor: Color, onRetry: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().background(backgroundColor), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Image(
+                painter = painterResource(id = R.drawable.no_wifi_2_svgrepo_com),
+                contentDescription = "No Internet",
+                modifier = Modifier.size(150.dp),
+                colorFilter = ColorFilter.tint(contentColor)
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            Text("Page could not be loaded", style = MaterialTheme.typography.titleMedium, color = contentColor)
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) {
+                Text("Retry", color = backgroundColor)
+            }
+        }
+    }
 }
