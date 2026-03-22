@@ -1,17 +1,11 @@
 package chiccity.`in`.appWebView
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.outlined.List
 
 data class BottomNavItem(
     val label: String,
@@ -34,7 +28,9 @@ fun ChicCityBottomBar(
 ) {
     NavigationBar {
         bottomNavItems.forEach { item ->
+            // Logic: Compare the sealed class object instances
             val selected = currentDestination == item.destination
+            
             NavigationBarItem(
                 selected = selected,
                 onClick = { onDestinationSelected(item.destination) },
