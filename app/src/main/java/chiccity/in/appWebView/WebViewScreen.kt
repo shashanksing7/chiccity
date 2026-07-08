@@ -3,6 +3,9 @@ package chiccity.`in`.appWebView
 import android.graphics.Bitmap
 import android.webkit.*
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -26,34 +29,28 @@ fun WebViewScreen(
     modifier: Modifier = Modifier,
     onLoginSuccess: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
+    var progress by remember { mutableIntStateOf(0) }
     var hasError by remember { mutableStateOf(false) }
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val contentColor = MaterialTheme.colorScheme.onBackground
     val primaryColor = MaterialTheme.colorScheme.primary
 
-    val context = LocalContext.current
-
-    // ✅ Create WebView ONLY once
+    // Use the preloaded singleton WebView from WebViewManager
     val webView = remember {
-        WebView(context).apply {
-
-            val cookieManager = CookieManager.getInstance()
-            cookieManager.setAcceptCookie(true)
-            cookieManager.setAcceptThirdPartyCookies(this, true)
-
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.javaScriptCanOpenWindowsAutomatically = false
-            settings.setSupportMultipleWindows(false)
-
-            // ✅ Extra stability settings
-            settings.cacheMode = WebSettings.LOAD_DEFAULT
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+        WebViewManager.getOrCreateWebView(context).apply {
+            webChromeClient = object : WebChromeClient() {
+                override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                    progress = newProgress
+                    if (newProgress == 100) {
+                        isLoading = false
+                    }
+                }
+            }
 
             webViewClient = object : WebViewClient() {
-
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     isLoading = true
                     hasError = false
@@ -61,23 +58,16 @@ fun WebViewScreen(
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     isLoading = false
-
+                    
+                    val cookieManager = CookieManager.getInstance()
                     val cookies = cookieManager.getCookie("https://chiccity.in")
-
-                    // ✅ Detect login success
+                    
                     if (cookies?.contains("wordpress_logged_in") == true) {
-                        cookieManager.flush()
                         onLoginSuccess?.invoke()
                     }
 
-                    // ✅ 🚫 Disable injection on login/account pages
-                    val isLoginOrAccountPage =
-                        url?.contains("app-login") == true ||
-                                url?.contains("my-account") == true
-
-                    if (!isLoginOrAccountPage) {
-                        injectWhatsAppRemoval(view)
-                    }
+                    // Only keep WhatsApp removal
+                    injectWhatsAppRemoval(view)
                 }
 
                 override fun shouldOverrideUrlLoading(
@@ -85,9 +75,11 @@ fun WebViewScreen(
                     request: WebResourceRequest?
                 ): Boolean {
                     val link = request?.url.toString()
-                    return link.startsWith("whatsapp://") ||
-                            link.contains("wa.me") ||
-                            link.contains("api.whatsapp.com")
+                    return if (link.startsWith("whatsapp://") || link.contains("wa.me") || link.contains("api.whatsapp.com")) {
+                        true 
+                    } else {
+                        false
+                    }
                 }
 
                 override fun onReceivedError(
@@ -104,29 +96,19 @@ fun WebViewScreen(
         }
     }
 
-    // ✅ Attach WebView to holder once
-    LaunchedEffect(Unit) {
+    // Sync the webViewHolder for back navigation etc.
+    LaunchedEffect(webView) {
         webViewHolder.webView = webView
     }
 
-    // ✅ Decide FIRST page based on login cookie
+    // Load the URL only if it's different from current to avoid redundant reloads
     LaunchedEffect(url) {
-        val cookieManager = CookieManager.getInstance()
-        val cookies = cookieManager.getCookie("https://chiccity.in")
-
-        val finalUrl = if (cookies?.contains("wordpress_logged_in") == true) {
-            url   // ✅ Logged in → open main page
-        } else {
-            "https://chiccity.in/app-login/"  // ❗ Not logged in → login page
+        if (webView.url != url && !url.isNullOrEmpty()) {
+            webView.loadUrl(url)
         }
-
-        isLoading = true
-        hasError = false
-        webView.loadUrl(finalUrl)
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-
         AndroidView(
             factory = { webView },
             modifier = Modifier
@@ -134,8 +116,23 @@ fun WebViewScreen(
                 .alpha(if (hasError) 0f else 1f)
         )
 
-        if (isLoading && !hasError) {
-            LoadingOverlay(backgroundColor, primaryColor, contentColor)
+        // Progress bar at the top
+        AnimatedVisibility(
+            visible = isLoading,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            LinearProgressIndicator(
+                progress = { progress / 100f },
+                modifier = Modifier.fillMaxWidth().height(3.dp),
+                color = primaryColor,
+                trackColor = Color.Transparent
+            )
+        }
+
+        if (isLoading && progress < 10 && !hasError) {
+             LoadingOverlay(backgroundColor, primaryColor, contentColor)
         }
 
         if (hasError) {
@@ -152,91 +149,48 @@ fun WebViewScreen(
         }
     }
 
-    // ✅ Back navigation
+    // Handle Back Navigation using WebView history
     BackHandler(enabled = webView.canGoBack()) {
         webView.goBack()
     }
 }
 
+private fun injectWhatsAppRemoval(view: WebView?) {
+    view?.evaluateJavascript(
+        "(function() { " +
+        "const selectors = ['.wa__btn_popup_txt','.wa__btn_popup_icon','.wa__popup_heading','.wa__popup_content'];" +
+        "selectors.forEach(sel => { const el = document.querySelector(sel); if(el) el.remove(); });" +
+        "})();", null
+    )
+}
+
 @Composable
-private fun LoadingOverlay(
-    backgroundColor: Color,
-    primaryColor: Color,
-    contentColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
+private fun LoadingOverlay(backgroundColor: Color, primaryColor: Color, contentColor: Color) {
+    Box(modifier = Modifier.fillMaxSize().background(backgroundColor), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator(color = primaryColor)
             Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                "Please wait...",
-                style = MaterialTheme.typography.bodyLarge,
-                color = contentColor
-            )
+            Text("Optimizing your experience...", style = MaterialTheme.typography.bodyLarge, color = contentColor)
         }
     }
 }
 
 @Composable
-private fun ErrorOverlay(
-    backgroundColor: Color,
-    contentColor: Color,
-    primaryColor: Color,
-    onRetry: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
-    ) {
+private fun ErrorOverlay(backgroundColor: Color, contentColor: Color, primaryColor: Color, onRetry: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().background(backgroundColor), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
                 painter = painterResource(id = R.drawable.no_wifi_2_svgrepo_com),
                 contentDescription = "No Internet",
-                modifier = Modifier.size(150.dp),
+                modifier = Modifier.size(120.dp),
                 colorFilter = ColorFilter.tint(contentColor)
             )
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                "Page could not be loaded",
-                style = MaterialTheme.typography.titleMedium,
-                color = contentColor
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "Please check your internet connection.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = contentColor
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-            ) {
-                Text("Retry", color = backgroundColor)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Connection issue", style = MaterialTheme.typography.titleMedium, color = contentColor)
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = primaryColor)) {
+                Text("Try Again", color = Color.White)
             }
         }
     }
-}
-
-// ✅ JavaScript injection (only used on safe pages)
-private fun injectWhatsAppRemoval(view: WebView?) {
-    view?.evaluateJavascript(
-        """
-        (function() {
-            const selectors = ['.wa__btn_popup_txt','.wa__btn_popup_icon','.wa__popup_heading','.wa__popup_content'];
-            selectors.forEach(sel => { 
-                const el = document.querySelector(sel); 
-                if(el) el.remove(); 
-            });
-        })();
-        """.trimIndent(),
-        null
-    )
 }
